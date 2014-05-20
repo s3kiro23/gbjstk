@@ -106,7 +106,15 @@ function gbPostRequest ( path, getParams, postParams )
 		}
 	}
 	document.body.appendChild ( form );
-	form.submit ();
+
+	if (gbUserInfo.platform=='android')
+	{
+		Android.post (formAction, postParams);
+	}
+	else
+	{
+		form.submit ();
+	}
 }
 
 /* Function : gbGetRequest
