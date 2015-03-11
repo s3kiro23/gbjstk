@@ -364,6 +364,14 @@ function gbGetLocation ()
 	}
 }
 
+/* Function : gbGetTimezoneOffset
+* Asks for the time difference between UTC time and local time, in minutes.
+*/
+function gbGetTimezoneOffset ()
+{
+	gbGetRequest ( "goodbarber://gettimezoneoffset" );
+}
+
 /* Function : gbSetPreference
 *  Stores a preference in User Defaults.
 *  @param key The key to store
