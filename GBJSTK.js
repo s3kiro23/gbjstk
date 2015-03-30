@@ -13,22 +13,46 @@
 *  1 : Alerts before any request
 *  2 : Alerts before any request + stop requests
 */
-var gbDebuggingMode = 0;
-
-/* Var : BOOL gbDesktopMode
-*  Switch the gbRequest method to gbXHRequest - just to develop on a desktop browser.
-*  DO NOT USE IN PRODUCTION 
-*  true : Development mode
-*  false : Production mode
-*/
-var gbDesktopMode = !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/Android/i);
+var gbDebuggingMode = 0,
 
 /* Var : string gbToken
 *  Initialize the authentification token used in gbRequest();
 */
-var gbToken = gbParam('gbToken');
+gbToken = gbParam('gbToken');
+
+/************* Parent platform detection *************/
+
+/* Function : isHTML5Mode
+*  This function checks if the plugin is loaded inside an HTML5 version, by checking parent iframe info.
+*  @return true if loaded inside HTML5 version
+*/
+function gbCheckHTML5Mode () {
+    try {
+        return window.parent && window.self !== window.parent && window.parent.isGbHTML5;
+    } catch (e) {
+    	//No access to parent iframe = CORS iframe = not HTML5 (plugin iframes use same domain).
+        return false;
+    }
+}
+
+/* Var : BOOL gbHTML5Mode
+*  Switches the URL updates and the form posts to calls to parent iframe - necessary for the plugins to work in the HTML5 version.
+*  true : Development mode
+*  false : Production mode
+*/
+gbHTML5Mode = gbCheckHTML5Mode();
+
+/* Var : BOOL gbDevMode
+*  JUST TO DEVELOP DIRECTLY ON A DESKTOP BROWSER. If you want to dev and test your plugin in a standard web page, this boolean will do the trick.
+*  Once integrated in a plugin section of an app, this will always be false.
+*  DO NOT USE IN PRODUCTION 
+*  true : Development mode
+*  false : Production mode
+*/
+var gbDevMode = !gbHTML5Mode && !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/Android/i);
 
 /************* Helper Functions *************/
+
 /* Function : gbParam
 *  This function returns the value of an argument in location.href.
 *  @param name The name of the argument
@@ -81,40 +105,60 @@ function gbConstructQueryString ( params )
 }
 
 /* Function : gbPostRequest
-*  This function creates a form in document.body and send a POST request to "path" using "getParams" and "postParams".
+*  In native engines and devmode, this function creates a form in document.body and send a POST request to "path" using "getParams" and "postParams".
+*  In HTML5 engine, this function delegates its action to the parent window.
 *  @param path The action of the form
 *  @param params The params to send in the request body 
 */
 function gbPostRequest ( path, getParams, postParams )
 {
+
 	var formAction = path;
 	if ( !gbIsEmpty ( getParams ) )
 		formAction += "?" + gbConstructQueryString ( getParams ); 
 
-	var form = document.createElement ( "form" );
-	form.setAttribute ( "method", "post" );
-	form.setAttribute ( "action", formAction );
-	for ( var key in postParams )
-	{
-		if ( postParams.hasOwnProperty ( key ) )
+	if(!gbHTML5Mode){
+		
+		var form = document.createElement ( "form" );
+		form.setAttribute ( "method", "post" );
+		form.setAttribute ( "action", formAction );
+		for ( var key in postParams )
 		{
-			var hiddenField = document.createElement ( "input" );
-			hiddenField.setAttribute ( "type", "hidden" );
-			hiddenField.setAttribute ( "name", key );
-			hiddenField.setAttribute ( "value", postParams[key] );
-			form.appendChild ( hiddenField );
+			if ( postParams.hasOwnProperty ( key ) )
+			{
+				var hiddenField = document.createElement ( "input" );
+				hiddenField.setAttribute ( "type", "hidden" );
+				hiddenField.setAttribute ( "name", key );
+				hiddenField.setAttribute ( "value", postParams[key] );
+				form.appendChild ( hiddenField );
+			}
 		}
-	}
-	document.body.appendChild ( form );
+		document.body.appendChild ( form );
 
-	if (gbUserInfo.platform=='android')
-	{
-		Android.post (formAction, postParams);
+		if (gbUserInfo.platform=='android')
+		{
+			Android.post (formAction, postParams);
+		}
+		else
+		{
+			form.submit ();
+		}
+	} else {
+		window.parent.modules.plugin.postRequest( formAction, postParams  );
 	}
+}
+
+/* Function : gbEvalPath
+*  In native engines, this function launches a navigation to "destination".
+*  In HTML5 engine, this function sends the "destination" to parent window (HTML5 cannot interrupt navigations)
+*  @param path The destination path
+*  @param params (optional) The params to send in the request body 
+*/
+function gbEvalPath(destination){
+	if(!gbHTML5Mode)
+		document.location.replace ( destination );
 	else
-	{
-		form.submit ();
-	}
+		window.parent.modules.plugin.evalPath( destination );
 }
 
 /* Function : gbGetRequest
@@ -132,8 +176,9 @@ function gbGetRequest ( path, getParams )
 	if ( gbDebuggingMode >= 1 )
 		alert ( destination );
 	
-	if ( gbDebuggingMode < 2 )
-		document.location.replace ( destination );
+	if ( gbDebuggingMode < 2 ){
+		gbEvalPath(destination)
+	}
 }
 
 function gbXHRequest ( requestMethod, tag, path, postParams )
@@ -261,7 +306,7 @@ function gbNavigateBack ()
 */
 function gbRequest ( resourceUrl, tag, cache, requestMethod, postParams )
 {
-	if (gbDesktopMode && gbToken == '')
+	if (gbDevMode && gbToken == '')
 	{
 		setTimeout(function() { gbRequest ( resourceUrl, tag, cache, requestMethod, postParams ) }, 200);
 		return;
@@ -270,7 +315,7 @@ function gbRequest ( resourceUrl, tag, cache, requestMethod, postParams )
 	postParams = postParams || {};
 	requestMethod = requestMethod || "GET";
 	
-	if ( gbDesktopMode )
+	if ( gbDevMode )
 	{
 		resourceUrl+= (resourceUrl.match(/\?/g) ? '&' : '?') +'gbToken=' + gbToken;
 		gbXHRequest ( requestMethod, tag, resourceUrl, postParams );
@@ -292,7 +337,7 @@ function gbRequest ( resourceUrl, tag, cache, requestMethod, postParams )
 
 /* Function : gbAuthenticate
 *  Ask the user to authenticate on a social network.
-*  @param services The services to use for the authentication | values : [all(default)|facebook|twitter]
+*  @param services The services to use for the authentication | values : [all(default)|facebook|twitter]
 *  @param skip Give the user the possibility to skip the authentication process | values : [YES(default)|NO]
 */
 function gbAuthenticate ( services, skip )
@@ -331,7 +376,7 @@ function gbGetMedia ( mediaType, mediaSource )
 */
 function gbGetLocation ()
 {
-	if ( gbDesktopMode )
+	if ( gbDevMode )
 	{
 		navigator.geolocation.getCurrentPosition ( 
 			function (position)
@@ -340,23 +385,52 @@ function gbGetLocation ()
  			},
 			function (error)
 			{
-					switch(error.code) 
-					{
-						case error.TIMEOUT:
-							gbDidFailGetLocation ('Timeout');
-							break;
-						case error.POSITION_UNAVAILABLE:
-							gbDidFailGetLocation ('Position unavailable');
-							break;
-						case error.PERMISSION_DENIED:
-							gbDidFailGetLocation ('Permission denied');
-							break;
-						case error.UNKNOWN_ERROR:
-							gbDidFailGetLocation ('Unknown error');
-							break;
-					}
+				switch(error.code) 
+				{
+					case error.TIMEOUT:
+						gbDidFailGetLocation ('Timeout');
+						break;
+					case error.POSITION_UNAVAILABLE:
+						gbDidFailGetLocation ('Position unavailable');
+						break;
+					case error.PERMISSION_DENIED:
+						gbDidFailGetLocation ('Permission denied');
+						break;
+					case error.UNKNOWN_ERROR:
+						gbDidFailGetLocation ('Unknown error');
+						break;
+				}
 			}
 		);
+	}
+	else if(gbHTML5Mode){
+		var options = ;
+		window.parent.util.MAP.getCurrentPosition(
+			function (position)
+			{  
+				gbDidSuccessGetLocation ( position.coords.latitude,position.coords.longitude );
+ 			},
+			function (error)
+			{
+				switch(error.code) 
+				{
+					case error.TIMEOUT:
+						gbDidFailGetLocation ('Timeout');
+						break;
+					case error.POSITION_UNAVAILABLE:
+						gbDidFailGetLocation ('Position unavailable');
+						break;
+					case error.PERMISSION_DENIED:
+						gbDidFailGetLocation ('Permission denied');
+						break;
+					case error.UNKNOWN_ERROR:
+						gbDidFailGetLocation ('Unknown error');
+						break;
+				}
+			},
+			{
+		  timeout: 15000
+		});
 	}
 	else
 	{
@@ -388,7 +462,7 @@ function gbSetPreference ( key, valueString )
 */
 function gbGetPreference ( key )
 {
-	if ( gbDesktopMode )
+	if ( gbDevMode )
 		gbDidSuccessGetPreference ( key, "" );
 
 	gbGetRequest ( "goodbarber://getpreference", { "key":key } );
