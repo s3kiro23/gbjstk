@@ -148,21 +148,9 @@ function gbPostRequest ( path, getParams, postParams )
 	}
 }
 
-/* Function : gbEvalPath
+/* Function : gbGetRequest
 *  In native engines, this function launches a navigation to "destination".
 *  In HTML5 engine, this function sends the "destination" to parent window (HTML5 cannot interrupt navigations)
-*  @param path The destination path
-*  @param params (optional) The params to send in the request body 
-*/
-function gbEvalPath(destination){
-	if(!gbHTML5Mode)
-		document.location.replace ( destination );
-	else
-		window.parent.modules.plugin.evalPath( destination );
-}
-
-/* Function : gbGetRequest
-*  This function launches a navigation to "path" setting "params" as GET arguments.
 *  @param path The destination path
 *  @param params (optional) The params to send in the request body 
 */
@@ -177,7 +165,10 @@ function gbGetRequest ( path, getParams )
 		alert ( destination );
 	
 	if ( gbDebuggingMode < 2 ){
-		gbEvalPath(destination)
+		if(!gbHTML5Mode)
+			document.location.replace ( destination );
+		else
+			window.parent.modules.plugin.evalPath( destination );
 	}
 }
 
@@ -376,61 +367,35 @@ function gbGetMedia ( mediaType, mediaSource )
 */
 function gbGetLocation ()
 {
+	function success(position)
+	{  
+		gbDidSuccessGetLocation ( position.coords.latitude,position.coords.longitude );
+	}
+	function fail(error)
+	{
+		switch(error.code) 
+		{
+			case error.TIMEOUT:
+				gbDidFailGetLocation ('Timeout');
+				break;
+			case error.POSITION_UNAVAILABLE:
+				gbDidFailGetLocation ('Position unavailable');
+				break;
+			case error.PERMISSION_DENIED:
+				gbDidFailGetLocation ('Permission denied');
+				break;
+			case error.UNKNOWN_ERROR:
+				gbDidFailGetLocation ('Unknown error');
+				break;
+		}
+	}
+	var options = {
+	  timeout: 15000
+	};
+
 	if ( gbDevMode )
 	{
-		navigator.geolocation.getCurrentPosition ( 
-			function (position)
-			{  
-				gbDidSuccessGetLocation ( position.coords.latitude,position.coords.longitude );
- 			},
-			function (error)
-			{
-				switch(error.code) 
-				{
-					case error.TIMEOUT:
-						gbDidFailGetLocation ('Timeout');
-						break;
-					case error.POSITION_UNAVAILABLE:
-						gbDidFailGetLocation ('Position unavailable');
-						break;
-					case error.PERMISSION_DENIED:
-						gbDidFailGetLocation ('Permission denied');
-						break;
-					case error.UNKNOWN_ERROR:
-						gbDidFailGetLocation ('Unknown error');
-						break;
-				}
-			}
-		);
-	}
-	else if(gbHTML5Mode){
-		var options = ;
-		window.parent.util.MAP.getCurrentPosition(
-			function (position)
-			{  
-				gbDidSuccessGetLocation ( position.coords.latitude,position.coords.longitude );
- 			},
-			function (error)
-			{
-				switch(error.code) 
-				{
-					case error.TIMEOUT:
-						gbDidFailGetLocation ('Timeout');
-						break;
-					case error.POSITION_UNAVAILABLE:
-						gbDidFailGetLocation ('Position unavailable');
-						break;
-					case error.PERMISSION_DENIED:
-						gbDidFailGetLocation ('Permission denied');
-						break;
-					case error.UNKNOWN_ERROR:
-						gbDidFailGetLocation ('Unknown error');
-						break;
-				}
-			},
-			{
-		  timeout: 15000
-		});
+		navigator.geolocation.getCurrentPosition (success, fail, options);
 	}
 	else
 	{
