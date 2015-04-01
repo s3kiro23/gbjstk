@@ -30,7 +30,7 @@ function gbCheckHTML5Mode () {
     try {
         return window.parent && window.self !== window.parent && window.parent.isGbHTML5;
     } catch (e) {
-    	//No access to parent iframe = CORS iframe = not HTML5 (plugin iframes use same domain).
+    	/*No access to parent iframe = CORS iframe = not HTML5 (plugin iframes use same domain).*/
         return false;
     }
 }
