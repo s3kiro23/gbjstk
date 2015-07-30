@@ -137,7 +137,7 @@ function gbPostRequest ( path, getParams, postParams )
 
 		if (gbUserInfo.platform=='android')
 		{
-			Android.post (formAction, postParams);
+			Android.post (formAction, JSON.stringify(postParams));
 		}
 		else
 		{
