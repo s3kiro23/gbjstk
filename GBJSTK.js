@@ -432,3 +432,14 @@ function gbGetPreference ( key )
 
 	gbGetRequest ( "goodbarber://getpreference", { "key":key } );
 }
+
+/* Function : gbGetUser
+*  Get the currently connected user. Will call the fail handler gbDidFailGetUser if no user is connected.
+*/
+function gbGetUser ()
+{
+	if ( gbDevMode )
+		gbDidSuccessGetUser ( { id:0, email:"user@example.com", attribs:{ displayName:"Example User" } } );
+
+	gbGetRequest ( "goodbarber://getuser" );
+}
