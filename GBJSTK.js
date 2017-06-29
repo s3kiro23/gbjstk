@@ -22,32 +22,13 @@ gbToken = gbParam('gbToken');
 
 /************* Parent platform detection *************/
 
-/* Function : isHTML5Mode
-*  This function checks if the plugin is loaded inside an HTML5 version, by checking parent iframe info.
-*  @return true if loaded inside HTML5 version
-*/
-function gbCheckHTML5Mode () {
-    try {
-        return window.parent && window.self !== window.parent && window.parent.isGbHTML5;
-    } catch (e) {
-    	/*No access to parent iframe = CORS iframe = not HTML5 (plugin iframes use same domain).*/
-        return false;
-    }
-}
-
-/* Var : BOOL gbHTML5Mode
-*  Switches the URL updates and the form posts to calls to parent iframe - necessary for the plugins to work in the HTML5 version.
-*  true : Development mode
-*  false : Production mode
-*/
-gbHTML5Mode = gbCheckHTML5Mode();
 
 gbUserInfo = {};
 
 /* Var : BOOL gbAngularMode
 *  Switches the URL updates and the form posts to messages to parent iframe - necessary for the plugins to work in the website version.
 */
-gbAngularMode = false;
+gbAngularMode = true;
 
 /* Var : BOOL gbDevMode
 *  JUST TO DEVELOP DIRECTLY ON A DESKTOP BROWSER. If you want to dev and test your plugin in a standard web page, this boolean will do the trick.
@@ -56,7 +37,7 @@ gbAngularMode = false;
 *  true : Development mode
 *  false : Production mode
 */
-var gbDevMode = !gbHTML5Mode && !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/Android/i);
+var gbDevMode = !gbAngularMode && !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/Android/i);
 
 /************* Helper Functions *************/
 
@@ -113,7 +94,7 @@ function gbConstructQueryString ( params )
 
 /* Function : gbPostRequest
 *  In native engines and devmode, this function creates a form in document.body and send a POST request to "path" using "getParams" and "postParams".
-*  In HTML5 engine, this function delegates its action to the parent window.
+*  In Webapp engine, this function delegates its action to the parent window.
 *  @param path The action of the form
 *  @param params The params to send in the request body 
 */
@@ -124,9 +105,7 @@ function gbPostRequest ( path, getParams, postParams )
 	if ( !gbIsEmpty ( getParams ) )
 		formAction += "?" + gbConstructQueryString ( getParams ); 
 
-	if (gbHTML5Mode) {
-		window.parent.modules.plugin.postRequest( formAction, postParams  );
-	} else if (gbAngularMode) {
+	if (gbAngularMode) {
 		window.parent.postMessage({url: formAction, params: postParams}, '*');
 	} else {
 		var form = document.createElement ( "form" );
@@ -158,7 +137,7 @@ function gbPostRequest ( path, getParams, postParams )
 
 /* Function : gbGetRequest
 *  In native engines, this function launches a navigation to "destination".
-*  In HTML5 engine, this function sends the "destination" to parent window (HTML5 cannot interrupt navigations)
+*  In Webapp engine, this function sends the "destination" to parent window with the PostMessage Api
 *  @param path The destination path
 *  @param params (optional) The params to send in the request body 
 */
@@ -173,9 +152,7 @@ function gbGetRequest ( path, getParams )
 		alert ( destination );
 	
 	if ( gbDebuggingMode < 2 ) {
-		if (gbHTML5Mode) {
-			window.parent.modules.plugin.evalPath( destination );
-		} else if (gbAngularMode) {
+		if (gbAngularMode) {
 			window.parent.postMessage({url: destination}, '*');
 		} else {
 			document.location.replace ( destination );
