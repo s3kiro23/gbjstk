@@ -37,7 +37,7 @@ gbAngularMode = false;
 *  true : Development mode
 *  false : Production mode
 */
-var gbDevMode = !gbAngularMode && !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/Android/i);
+var gbDevMode = !gbAngularMode && !navigator.userAgent.match(/iPhone OS/i) && !navigator.userAgent.match(/iPad/i) && !navigator.userAgent.match(/Android/i);
 
 /************* Helper Functions *************/
 
