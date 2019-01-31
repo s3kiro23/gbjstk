@@ -41,6 +41,15 @@ var gbDevMode = !gbAngularMode && !navigator.userAgent.match(/iPhone OS/i) && !n
 
 /************* Helper Functions *************/
 
+/** Function : gbInitPWA
+ *  This functions initializes communication with the parent PWA (if not already done)
+ */
+function gbInitPWA() {
+	if (!gbAngularMode && window.parent) {
+		parent.postMessage({url: "goodbarber://init"}, '*');
+	}
+}
+
 /* Function : gbParam
 *  This function returns the value of an argument in location.href.
 *  @param name The name of the argument
@@ -512,3 +521,5 @@ window.addEventListener("message", function(event) {
 	}
 
 });
+
+gbInitPWA();
