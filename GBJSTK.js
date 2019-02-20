@@ -164,7 +164,8 @@ function gbGetRequest ( path, getParams )
 		if (gbAngularMode) {
 			window.parent.postMessage({url: destination}, '*');
 		} else {
-			document.location.replace ( destination );
+			// Timeout 0 in case of consecutive calls to this method
+			window.setTimeout(function (){ document.location.replace ( destination ); }, 0);
 		}
 	}
 }
