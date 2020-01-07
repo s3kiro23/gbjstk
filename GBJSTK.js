@@ -41,10 +41,29 @@ var gbDevMode = !gbAngularMode && !navigator.userAgent.match(/iPhone OS/i) && !n
 
 /************* Helper Functions *************/
 
-/** Function : gbInitPWA
- *  This functions initializes communication with the parent PWA (if not already done)
+/** Function: gbPlatformIsIos()
+ * This function allow you to check if the current platform is iOS
+ * @return true if the current plateform is iOS
  */
-function gbInitPWA() {
+function gbPlatformIsIos()
+{
+	return gbUserInfo && gbUserInfo.platform == 'ios';
+}
+
+/** Function: gbPlatformIsAndroid()
+ * This function allow you to check if the current platform is Android
+ * @return true if the current plateform is Android
+ */
+function gbPlatformIsAndroid()
+{
+	return gbUserInfo && gbUserInfo.platform == 'android';
+}
+
+/** Function : gbInitPWA
+ *  This function initializes communication with the parent PWA (if not already done)
+ */
+function gbInitPWA() 
+{
 	if (!gbAngularMode && window.parent) {
 		parent.postMessage({url: "goodbarber://init"}, '*');
 	}
@@ -55,7 +74,8 @@ function gbInitPWA() {
 *  @param name The name of the argument
 *  @return value
 */
-function gbParam(name) {
+function gbParam(name) 
+{
     var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
     if (results) return results[1];
     return '';
@@ -109,6 +129,16 @@ function gbConstructQueryString ( params )
 */
 function gbPostRequest ( path, getParams, postParams )
 {
+	// As WKWebview doesn't allow anymore access to httpBody, we add as get parameter an id to the request
+	if (gbPlatformIsIos() && postParams) {
+		var date = new Date();
+		var timestamp = date.getTime();
+		if (!getParams) {
+			getParams = {}
+		}
+
+		getParams['gbid'] = timestamp;
+	}
 
 	var formAction = path;
 	if ( !gbIsEmpty ( getParams ) )
@@ -133,12 +163,31 @@ function gbPostRequest ( path, getParams, postParams )
 		}
 		document.body.appendChild ( form );
 
-		if (gbUserInfo.platform=='android')
+		if (gbPlatformIsAndroid())
 		{
 			Android.post (formAction, JSON.stringify(postParams));
 		}
-		else
+		else 
 		{
+			if (gbPlatformIsIos() && postParams)
+			{
+				// As WKWebview doesn't allow anymore access to httpBody, we add post params to the dom as hidden
+				var postElement = document.createElement('div');
+				postElement.setAttribute("class", "gbdata");
+				postElement.setAttribute("style", "display: none !important");
+				postElement.setAttribute("id", getParams['gbid']);
+				var postParamsString = "";
+				var i=0;
+				for (var key in postParams) {
+					if (i>0) {
+					    postParamsString += "&";
+					}
+					postParamsString += key + "=" + postParams[key];
+					i++;
+				}
+				postElement.innerHTML = postParamsString;
+	            document.body.appendChild(postElement);
+			}
 			form.submit ();
 		}
 	}
@@ -429,7 +478,7 @@ function gbGetUser ()
 */
 function gbLogs( log )
 {
-	if (gbUserInfo && gbUserInfo.platform == 'ios') 
+	if (gbPlatformIsIos()) 
 	{
 		gbAlert('Logs', log);
 	}
@@ -444,7 +493,7 @@ function gbLogs( log )
 */
 function gbAlert( title, message )
 {
-	if (gbUserInfo && gbUserInfo.platform == 'ios') 
+	if (gbPlatformIsIos()) 
 	{
 		gbGetRequest ( "goodbarber://alert?title=" + encodeURIComponent(title) + '&message=' + encodeURIComponent(message));
 	}
