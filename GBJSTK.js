@@ -449,22 +449,24 @@ function gbGetTimezoneOffset ()
 *  Stores a preference in User Defaults.
 *  @param key The key to store
 *  @param valueString The value to store
+*  @param isGlobal Used to share preference between all plugins of the app. Possible values : 0 or 1.
 */
-function gbSetPreference ( key, valueString )
+function gbSetPreference ( key, valueString, isGlobal="0" )
 {
-	gbGetRequest ( "goodbarber://setpreference", { "key":key, "value":valueString } );
+	gbGetRequest ( "goodbarber://setpreference", { "key":key, "value":valueString, "global": isGlobal } );
 }
 
 /* Function : gbGetPreference
 *  Get a preference stored in User Defaults.
 *  @param key The key to get
+*  @param isGlobal Used to get a shared preference between all plugins of the app. Possible values : 0 or 1.
 */
-function gbGetPreference ( key )
+function gbGetPreference ( key, isGlobal="0" )
 {
 	if ( gbDevMode )
 		gbDidSuccessGetPreference ( key, "" );
 
-	gbGetRequest ( "goodbarber://getpreference", { "key":key } );
+	gbGetRequest ( "goodbarber://getpreference", { "key":key, "isGlobal": isGlobal } );
 }
 
 /* Function : gbGetUser
