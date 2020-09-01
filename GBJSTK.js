@@ -129,8 +129,13 @@ function gbConstructQueryString ( params )
 */
 function gbPostRequest ( path, getParams, postParams )
 {
+    var shouldRemovePost = false;
+    if (gbPlatformIsIos() && path.startsWith("goodbarber://") && postParams) {
+        shouldRemovePost = true;
+    }
+    
 	// As WKWebview doesn't allow anymore access to httpBody, we add as get parameter an id to the request
-	if (gbPlatformIsIos() && postParams) {
+	if (shouldRemovePost) {
 		var date = new Date();
 		var timestamp = date.getTime();
 		if (!getParams) {
@@ -169,7 +174,7 @@ function gbPostRequest ( path, getParams, postParams )
 		}
 		else 
 		{
-			if (gbPlatformIsIos() && postParams)
+			if (shouldRemovePost)
 			{
 				// As WKWebview doesn't allow anymore access to httpBody, we add post params to the dom as hidden
 				var postElement = document.createElement('div');
