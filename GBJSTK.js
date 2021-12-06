@@ -515,7 +515,11 @@ function gbAlert( title, message )
 */
 function gbPrint()
 {
-	gbGetRequest ( "goodbarber://print" );
+	if (!gbAngularMode) {
+        gbGetRequest ( "goodbarber://print" );
+    } else {
+        window.print();
+    }
 }
 
 /************* Website *************/
