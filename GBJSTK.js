@@ -360,7 +360,6 @@ function gbRequest ( resourceUrl, tag, cache, requestMethod, postParams )
 
 /************* [GB Plugin API] Other Methods *************/
 
-/* Function : gbAuthenticate
 /* Function : gbShare
 *  Ask the user to share a content on a social network.
 *  @param shareText The text to share
