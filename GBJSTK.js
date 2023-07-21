@@ -28,7 +28,9 @@ gbUserInfo = {};
 /* Var : BOOL gbAngularMode
 *  Switches the URL updates and the form posts to messages to parent iframe - necessary for the plugins to work in the website version.
 */
-gbAngularMode = false;
+if (typeof gbAngularMode == "undefined") {
+	gbAngularMode = false;
+}
 
 /* Var : BOOL gbDevMode
 *  JUST TO DEVELOP DIRECTLY ON A DESKTOP BROWSER. If you want to dev and test your plugin in a standard web page, this boolean will do the trick.
